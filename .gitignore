@@ -1,3 +1,21 @@
 /fabric_in_a_day
 /notebooks
 /ais
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment
+.env
+
+# Generated model artifacts (regenerate via models/train_cf.py + build_candidates.py)
+models/*.pkl
+models/*.json
+models/*.parquet
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
