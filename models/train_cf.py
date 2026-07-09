@@ -1,4 +1,5 @@
 import pickle
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -6,16 +7,15 @@ import pandas as pd
 from scipy.sparse import csr_matrix
 from sklearn.metrics.pairwise import cosine_similarity
 
-BASE_DIR = Path("/home/ec2-user/realtime-rec-system")
-DATA_DIR = BASE_DIR / "data"
-MODELS_DIR = BASE_DIR / "models"
-
-WATCH_HISTORY_PATH = DATA_DIR / "watch_history.csv"
-REVIEWS_PATH = DATA_DIR / "reviews.csv"
-
-ITEM_SIM_PATH = MODELS_DIR / "item_similarity.pkl"
-POPULAR_PATH = MODELS_DIR / "popular_movies.pkl"
-INTERACTIONS_PATH = MODELS_DIR / "user_item_interactions.parquet"
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from app.config import (
+    MODELS_DIR,
+    WATCH_HISTORY_PATH,
+    REVIEWS_PATH,
+    ITEM_SIM_PATH,
+    POPULAR_PATH,
+    INTERACTIONS_PATH,
+)
 
 
 def safe_float(value, default=0.0) -> float:

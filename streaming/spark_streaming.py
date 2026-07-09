@@ -1,4 +1,8 @@
 import json
+import pickle
+import sys
+from pathlib import Path
+
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col,
@@ -10,22 +14,23 @@ from pyspark.sql.functions import (
     struct,
     to_json,
 )
-from pyspark.sql.types import StructType, StructField, IntegerType, StringType
+from pyspark.sql.types import StructType, StructField, StringType
 from pyspark.sql.window import Window
 import redis
-import pickle
 
-USER_TOPN_PATH = "/home/ec2-user/realtime-rec-system/models/user_topn.pkl"
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from app.config import USER_TOPN_PATH, REDIS_HOST, REDIS_PORT, KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC
 
 try:
     with open(USER_TOPN_PATH, "rb") as f:
         USER_TOPN = pickle.load(f)
     print(f"Loaded CF candidates for {len(USER_TOPN)} users")
-except:
+except FileNotFoundError:
     USER_TOPN = {}
     print("CF candidates not found")
+
 # Redis client
-redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
+redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
 # Spark session
 spark = (
@@ -40,10 +45,11 @@ spark = (
 
 spark.sparkContext.setLogLevel("WARN")
 
-# Schema for incoming Kafka JSON
+# Schema for incoming Kafka JSON. IDs are strings (e.g. "user_00042",
+# "movie_0511") to match the CSV data and the offline CF model's keys.
 schema = StructType([
-    StructField("user_id", IntegerType(), True),
-    StructField("movie_id", IntegerType(), True),
+    StructField("user_id", StringType(), True),
+    StructField("movie_id", StringType(), True),
     StructField("event_type", StringType(), True),
     StructField("ts", StringType(), True),
     StructField("genre", StringType(), True),
@@ -53,8 +59,8 @@ schema = StructType([
 raw_df = (
     spark.readStream
     .format("kafka")
-    .option("kafka.bootstrap.servers", "localhost:9092")
-    .option("subscribe", "user-events")
+    .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS)
+    .option("subscribe", KAFKA_TOPIC)
     .option("startingOffsets", "latest")
     .load()
 )

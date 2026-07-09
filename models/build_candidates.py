@@ -1,21 +1,20 @@
 import json
 import pickle
+import sys
 from collections import defaultdict, Counter
 from pathlib import Path
 
 import pandas as pd
 
-BASE_DIR = Path("/home/ec2-user/realtime-rec-system")
-DATA_DIR = BASE_DIR / "data"
-MODELS_DIR = BASE_DIR / "models"
-
-WATCH_HISTORY_PATH = DATA_DIR / "watch_history.csv"
-MOVIES_PATH = DATA_DIR / "movies.csv"
-
-ITEM_SIM_PATH = MODELS_DIR / "item_similarity.pkl"
-POPULAR_PATH = MODELS_DIR / "popular_movies.pkl"
-USER_TOPN_PATH = MODELS_DIR / "user_topn.pkl"
-USER_TOPN_JSON_PATH = MODELS_DIR / "user_topn.json"
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from app.config import (
+    WATCH_HISTORY_PATH,
+    MOVIES_PATH,
+    ITEM_SIM_PATH,
+    POPULAR_PATH,
+    USER_TOPN_PATH,
+    USER_TOPN_JSON_PATH,
+)
 
 
 def normalize_text(value) -> str:
