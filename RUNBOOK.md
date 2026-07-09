@@ -388,6 +388,7 @@ kill <pid>
 Get-NetTCPConnection -LocalPort 8000 | Select-Object OwningProcess
 Stop-Process -Id <pid> -Force
 ```
+<<<<<<< HEAD
 
 **A CSV in `data/` can't be written (Windows, `PermissionError`)** —
 something has it open (commonly Excel). Close the workbook and retry;
@@ -406,3 +407,5 @@ Stop processes with `Ctrl+C` in each terminal. Recommended order: frontend
 
 If you're done for the day and running on EC2, stop the instance in AWS to
 avoid unnecessary charges.
+=======
+>>>>>>> 575d379d712491ade543aa5697c34e02da69180c
