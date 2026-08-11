@@ -20,6 +20,20 @@ built for. Offline mode has no such constraint.
 
 ## 1. How it works end to end
 
+In addition to the personalized pipeline below, the application includes a separate offline
+content-similarity workflow:
+
+```text
+1–3 selected movies -> React autocomplete -> POST /recommendations/similar
+                    -> models/content_similarity/features.npz
+                    -> blended local cosine scoring + diversity reranking
+                    -> enriched similar-movie cards
+```
+
+Build or refresh this artifact with `python models/build_content_similarity.py`. It uses only
+`data/movies.csv`; it does not read user history or contact Redis, Kafka, Spark, or an external
+recommendation API. See `README.md` for the scoring formula, API examples, tests, and limitations.
+
 ```
                     ┌─────────────────────────────────────────┐
                     │              OFFLINE (batch)             │
