@@ -6,23 +6,36 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import redis
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import (
     CORS_ORIGINS,
+    CONTENT_FEATURES_PATH,
+    CONTENT_MODEL_METADATA_PATH,
     MOVIES_PATH,
     REDIS_HOST,
     REDIS_PORT,
     USER_TOPN_PATH,
     USERS_PATH,
 )
+from app.schemas import (
+    MovieSearchResponse,
+    SimilarMoviesRequest,
+    SimilarMoviesResponse,
+)
+from app.services.content_similarity import (
+    ContentSimilarityUnavailable,
+    content_similarity_index,
+)
+from app.services.movie_catalog import search_movie_catalog, summaries_for_ids
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     load_user_topn()
     load_movie_metadata()
+    load_content_similarity()
     load_user_directory()
     check_redis()
     yield
@@ -96,7 +109,8 @@ def load_movie_metadata():
 
     required = {
         "movie_id", "title", "genre_primary", "genre_secondary", "content_type",
-        "language", "release_year", "imdb_rating", "poster_url", "director", "overview",
+        "language", "release_year", "duration_minutes", "country_of_origin",
+        "imdb_rating", "poster_url", "director", "overview",
     }
     existing = [c for c in required if c in df.columns]
 
@@ -113,6 +127,22 @@ def load_movie_metadata():
     }
 
     print(f"Loaded movie metadata for {len(MOVIE_METADATA):,} movies")
+
+
+def load_content_similarity() -> bool:
+    """Load and validate the local content index once at API startup."""
+    try:
+        content_similarity_index.load(
+            CONTENT_FEATURES_PATH,
+            CONTENT_MODEL_METADATA_PATH,
+            list(MOVIE_METADATA),
+        )
+        shape = content_similarity_index.features.shape if content_similarity_index.features is not None else ()
+        print(f"Loaded offline content-similarity model with shape {shape}")
+        return True
+    except ContentSimilarityUnavailable as exc:
+        print(f"Offline content-similarity model unavailable: {exc}")
+        return False
 
 
 def load_user_directory():
@@ -169,6 +199,7 @@ def health():
         "status": "ok",
         "offline_cf_loaded": bool(USER_TOPN),
         "movie_metadata_loaded": bool(MOVIE_METADATA),
+        "content_similarity_loaded": content_similarity_index.available,
         "user_directory_loaded": bool(USER_DIRECTORY),
         "redis_connected": check_redis(),
     }
@@ -206,12 +237,56 @@ def get_user(user_id: str):
     return {"user_id": user_id, **profile}
 
 
+@app.get("/movies/search", response_model=MovieSearchResponse)
+def search_movies(
+    q: str = Query(default="", max_length=100),
+    limit: int = Query(default=10, ge=1, le=50),
+):
+    return {
+        "query": q.strip(),
+        "results": search_movie_catalog(MOVIE_METADATA, q, limit),
+    }
+
+
 @app.get("/movies/{movie_id}")
 def get_movie(movie_id: str):
     meta = MOVIE_METADATA.get(movie_id)
     if meta is None:
         raise HTTPException(status_code=404, detail=f"Movie {movie_id} not found")
     return {"movie_id": movie_id, **meta}
+
+
+@app.post("/recommendations/similar", response_model=SimilarMoviesResponse)
+def get_similar_movies(request: SimilarMoviesRequest):
+    unknown_ids = [movie_id for movie_id in request.movie_ids if movie_id not in MOVIE_METADATA]
+    if unknown_ids:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Selected movie IDs were not found: {', '.join(unknown_ids)}",
+        )
+    if not content_similarity_index.available:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "The offline recommendation model is unavailable. "
+                "Run `python models/build_content_similarity.py` and restart the API."
+            ),
+        )
+
+    try:
+        recommendations = content_similarity_index.recommend(
+            request.movie_ids,
+            request.limit,
+            MOVIE_METADATA,
+        )
+    except ContentSimilarityUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    return {
+        "seed_movies": summaries_for_ids(request.movie_ids, MOVIE_METADATA),
+        "recommendations": recommendations,
+        "source": "offline_content_similarity",
+    }
 
 
 @app.get("/recommendations/{user_id}")
