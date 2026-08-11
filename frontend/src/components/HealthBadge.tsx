@@ -31,7 +31,7 @@ export function HealthBadge() {
 
   if (!reachable) {
     return (
-      <span className="flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700 dark:bg-red-500/15 dark:text-red-300">
+      <span className="status-pill border-rose-400/20 text-rose-300">
         <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
         API unreachable
       </span>
@@ -44,10 +44,8 @@ export function HealthBadge() {
 
   return (
     <span
-      className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
-        liveOk
-          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
-          : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+      className={`status-pill ${
+        liveOk ? "border-emerald-400/20 text-emerald-300" : "border-amber-300/20 text-amber-200"
       }`}
       title={
         liveOk
@@ -55,8 +53,9 @@ export function HealthBadge() {
           : "Redis not connected — serving offline recommendations only"
       }
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${liveOk ? "bg-emerald-500" : "bg-amber-500"}`} />
-      {liveOk ? "Live streaming" : "Offline only"}
+      <span className={`status-dot ${liveOk ? "bg-emerald-400" : "bg-amber-300"}`} />
+      <span className="hidden sm:inline">{liveOk ? "Live intelligence" : "Offline intelligence"}</span>
+      <span className="sm:hidden">{liveOk ? "Live" : "Offline"}</span>
     </span>
   );
 }
