@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { searchUsers } from "../api";
 import { useDebounce } from "../hooks/useDebounce";
 import type { UserSummary } from "../types";
@@ -7,24 +7,44 @@ interface UserSearchProps {
   onSelect: (user: UserSummary) => void;
 }
 
+function displayName(user: UserSummary) {
+  return [user.first_name, user.last_name].filter(Boolean).join(" ") || user.user_id;
+}
+
 export function UserSearch({ onSelect }: UserSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<UserSummary[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [searchError, setSearchError] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const debouncedQuery = useDebounce(query, 250);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputId = useId();
+  const listboxId = `${inputId}-results`;
 
   useEffect(() => {
+    const normalized = debouncedQuery.trim();
+    if (!normalized) {
+      setResults([]);
+      setLoading(false);
+      setSearchError(false);
+      return;
+    }
+
     let cancelled = false;
     setLoading(true);
-
-    searchUsers(debouncedQuery, 8)
-      .then((res) => {
-        if (!cancelled) setResults(res.users);
+    setSearchError(false);
+    searchUsers(normalized, 8)
+      .then((response) => {
+        if (cancelled) return;
+        setResults(response.users);
+        setActiveIndex(-1);
       })
       .catch(() => {
-        if (!cancelled) setResults([]);
+        if (cancelled) return;
+        setResults([]);
+        setSearchError(true);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -45,63 +65,113 @@ export function UserSearch({ onSelect }: UserSearchProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  function choose(user: UserSummary) {
+    setQuery(displayName(user));
+    setIsOpen(false);
+    setActiveIndex(-1);
+    onSelect(user);
+  }
+
+  function clear() {
+    setQuery("");
+    setResults([]);
+    setSearchError(false);
+    setActiveIndex(-1);
+    setIsOpen(false);
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      setIsOpen(false);
+      setActiveIndex(-1);
+      return;
+    }
+    if (!isOpen || results.length === 0) {
+      if (event.key === "ArrowDown") setIsOpen(true);
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveIndex((index) => (index + 1) % results.length);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex((index) => (index <= 0 ? results.length - 1 : index - 1));
+    } else if (event.key === "Enter" && activeIndex >= 0) {
+      event.preventDefault();
+      choose(results[activeIndex]);
+    }
+  }
+
+  const showPanel = isOpen && query.trim().length > 0;
+
   return (
-    <div ref={containerRef} className="relative w-full max-w-md">
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setIsOpen(true);
-        }}
-        onFocus={() => setIsOpen(true)}
-        placeholder="Search by user ID, name, or email…"
-        className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm
-                   text-neutral-900 placeholder:text-neutral-400 shadow-sm
-                   focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/30
-                   dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder:text-neutral-500"
-      />
+    <div ref={containerRef} className="search-control">
+      <label htmlFor={inputId}>Find a viewer</label>
+      <div className="search-field-wrap">
+        <svg aria-hidden="true" viewBox="0 0 20 20" className="search-icon">
+          <circle cx="8.5" cy="8.5" r="5" />
+          <path d="m12.2 12.2 4 4" />
+        </svg>
+        <input
+          id={inputId}
+          type="search"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={showPanel}
+          aria-controls={listboxId}
+          aria-activedescendant={activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined}
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
+          onKeyDown={handleKeyDown}
+          placeholder="Search by name, email, or user ID"
+          className="search-input"
+        />
+        {loading && <span className="input-spinner" aria-hidden="true" />}
+        {!loading && query && (
+          <button type="button" className="clear-input-button" onClick={clear} aria-label="Clear viewer search">
+            <svg aria-hidden="true" viewBox="0 0 20 20"><path d="m6 6 8 8m0-8-8 8" /></svg>
+          </button>
+        )}
+      </div>
 
-      {isOpen && (query.length > 0 || results.length > 0) && (
-        <div
-          className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-neutral-200
-                     bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
-        >
+      {showPanel && (
+        <div id={listboxId} role="listbox" className="search-results-panel">
           {loading && (
-            <div className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400">Searching…</div>
+            <div className="autocomplete-skeleton" aria-label="Searching viewers">
+              {[0, 1, 2].map((item) => <span key={item}><i /><b /></span>)}
+            </div>
           )}
-
-          {!loading && results.length === 0 && (
-            <div className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400">No users found</div>
-          )}
-
-          {!loading &&
-            results.map((user) => (
-              <button
-                key={user.user_id}
-                onClick={() => {
-                  onSelect(user);
-                  setQuery(`${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.user_id);
-                  setIsOpen(false);
-                }}
-                className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm
-                           hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              >
-                <span className="flex flex-col">
-                  <span className="font-medium text-neutral-900 dark:text-neutral-100">
-                    {user.first_name} {user.last_name}
-                  </span>
-                  <span className="text-xs text-neutral-500 dark:text-neutral-400">{user.user_id}</span>
-                </span>
-                {user.subscription_plan && (
-                  <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
-                    {user.subscription_plan}
-                  </span>
-                )}
-              </button>
-            ))}
+          {!loading && searchError && <p className="search-message search-error">Viewer search is unavailable. Please try again.</p>}
+          {!loading && !searchError && results.length === 0 && <p className="search-message">No users found.</p>}
+          {!loading && !searchError && results.map((user, index) => (
+            <button
+              id={`${listboxId}-${index}`}
+              type="button"
+              role="option"
+              aria-selected={index === activeIndex}
+              key={user.user_id}
+              onMouseEnter={() => setActiveIndex(index)}
+              onClick={() => choose(user)}
+              className={`autocomplete-option ${index === activeIndex ? "is-active" : ""}`}
+            >
+              <span className="autocomplete-avatar">{(user.first_name?.[0] ?? user.user_id[0] ?? "U").toUpperCase()}</span>
+              <span className="autocomplete-copy">
+                <strong>{displayName(user)}</strong>
+                <span>{[user.email, user.user_id].filter(Boolean).join(" · ")}</span>
+              </span>
+              {user.subscription_plan && <span className="autocomplete-meta">{user.subscription_plan}</span>}
+            </button>
+          ))}
         </div>
       )}
+
+      <div className="sr-only" aria-live="polite">
+        {loading ? "Searching viewers" : `${results.length} viewer results available`}
+      </div>
     </div>
   );
 }
