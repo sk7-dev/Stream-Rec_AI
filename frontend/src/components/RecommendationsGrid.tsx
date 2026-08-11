@@ -5,61 +5,70 @@ interface RecommendationsGridProps {
   data: RecommendationsResponse | null;
   loading: boolean;
   error: string | null;
+  viewerName: string;
 }
 
-export function RecommendationsGrid({ data, loading, error }: RecommendationsGridProps) {
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {Array.from({ length: 10 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-64 animate-pulse rounded-xl border border-neutral-200 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800"
-          />
-        ))}
-      </div>
-    );
-  }
+function ResultSkeleton({ label }: { label: string }) {
+  return (
+    <div aria-label={label} className="result-card-grid">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="result-skeleton">
+          <span className="skeleton-poster" />
+          <span className="skeleton-copy"><i /><i /><i /></span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function RecommendationsGrid({ data, loading, error, viewerName }: RecommendationsGridProps) {
+  if (loading) return <ResultSkeleton label="Loading personalized recommendations" />;
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
-        {error}
+      <div role="alert" className="error-state">
+        <span className="state-icon" aria-hidden="true">!</span>
+        <span><strong>We couldn’t load recommendations.</strong><small>{error}</small></span>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="rounded-lg border border-dashed border-neutral-300 px-4 py-10 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-        Search for a user above to see their recommendations.
+      <div className="compact-empty-state">
+        <span className="state-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M5 5.5h14v13H5zM5 9h14M9 5.5v13"/><path d="m13 12 3 1.75-3 1.75V12Z" /></svg>
+        </span>
+        <span><strong>Your recommendations will appear here.</strong><small>Search for a viewer to begin.</small></span>
+      </div>
+    );
+  }
+
+  if (data.recommendations.length === 0) {
+    return (
+      <div className="compact-empty-state">
+        <span className="state-icon" aria-hidden="true">0</span>
+        <span><strong>No recommendations yet.</strong><small>Try another viewer or check back after more activity.</small></span>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          Showing <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.recommendations.length}</span>{" "}
-          recommendations for <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.user_id}</span>
-        </p>
-        <span
-          className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-            data.source === "redis_live"
-              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
-              : "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300"
-          }`}
-        >
-          {data.source === "redis_live" ? "Live from Redis" : "Offline CF fallback"}
+    <section className="results-section" aria-labelledby="personalized-results-heading">
+      <header className="results-header">
+        <div>
+          <p className="section-kicker">Personalized selection</p>
+          <h3 id="personalized-results-heading">Picked for {viewerName || data.user_id}</h3>
+          <p aria-live="polite">{data.recommendations.length} personalized recommendations</p>
+        </div>
+        <span className={`source-pill ${data.source === "redis_live" ? "is-live" : ""}`}>
+          <span className="source-dot" />
+          {data.source === "redis_live" ? "Live recommendations" : "Collaborative filtering"}
         </span>
+      </header>
+      <div className="result-card-grid">
+        {data.recommendations.map((rec) => <MovieCard key={rec.movie_id} rec={rec} />)}
       </div>
-
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {data.recommendations.map((rec) => (
-          <MovieCard key={rec.movie_id} rec={rec} />
-        ))}
-      </div>
-    </div>
+    </section>
   );
 }
