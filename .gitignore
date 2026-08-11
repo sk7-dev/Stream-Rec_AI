@@ -12,7 +12,6 @@ venv/
 .env
 
 # Generated model artifacts (regenerate via models/train_cf.py + build_candidates.py)
-models/*.pkl
 models/*.json
 models/*.parquet
 
