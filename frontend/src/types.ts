@@ -29,6 +29,36 @@ export interface Recommendation {
   overview?: string;
 }
 
+export interface MovieSearchItem {
+  movie_id: string;
+  title: string;
+  release_year?: number;
+  poster_url?: string;
+  genres: string[];
+}
+
+export interface MovieSearchResponse {
+  query: string;
+  results: MovieSearchItem[];
+}
+
+export interface SimilarMovieRecommendation extends MovieSearchItem {
+  genre_primary?: string;
+  genre_secondary?: string;
+  language?: string;
+  imdb_rating?: number;
+  similarity_score: number;
+  match_reasons: string[];
+  rank: number;
+  source: "offline_content_similarity";
+}
+
+export interface SimilarMoviesResponse {
+  seed_movies: MovieSearchItem[];
+  recommendations: SimilarMovieRecommendation[];
+  source: "offline_content_similarity";
+}
+
 export type RecommendationSource = "redis_live" | "offline_cf_fallback";
 
 export interface RecommendationsResponse {
@@ -43,4 +73,5 @@ export interface HealthResponse {
   movie_metadata_loaded: boolean;
   user_directory_loaded: boolean;
   redis_connected: boolean;
+  content_similarity_loaded?: boolean;
 }
