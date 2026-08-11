@@ -1,118 +1,102 @@
 import { useState } from "react";
-import type { Recommendation } from "../types";
-
-const GENRE_GRADIENTS: Record<string, string> = {
-  action: "from-orange-500 to-red-600",
-  comedy: "from-amber-400 to-pink-500",
-  drama: "from-indigo-500 to-purple-600",
-  thriller: "from-slate-700 to-slate-900",
-  "sci-fi": "from-cyan-500 to-blue-700",
-  horror: "from-red-900 to-neutral-900",
-  romance: "from-pink-400 to-rose-600",
-  documentary: "from-teal-500 to-emerald-700",
-  animation: "from-sky-400 to-indigo-500",
-  biography: "from-yellow-600 to-orange-700",
-  war: "from-stone-600 to-neutral-800",
-  adventure: "from-lime-500 to-green-700",
-  fantasy: "from-fuchsia-500 to-violet-700",
-  crime: "from-zinc-700 to-black",
-  mystery: "from-purple-800 to-neutral-900",
-  music: "from-pink-500 to-purple-600",
-  "film-noir": "from-neutral-700 to-black",
-  western: "from-amber-700 to-orange-900",
-  family: "from-teal-400 to-cyan-600",
-};
-
-const DEFAULT_GRADIENT = "from-neutral-500 to-neutral-700";
-
-function gradientFor(genre?: string): string {
-  if (!genre) return DEFAULT_GRADIENT;
-  return GENRE_GRADIENTS[genre.toLowerCase()] ?? DEFAULT_GRADIENT;
-}
-
-function sourceBadge(source: string): { label: string; className: string } {
-  if (source.startsWith("live") || source === "redis_live") {
-    return {
-      label: "Live",
-      className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-    };
-  }
-  return {
-    label: "Offline CF",
-    className: "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300",
-  };
-}
+import type { Recommendation, SimilarMovieRecommendation } from "../types";
+import { gradientFor } from "../lib/genreGradients";
 
 interface MovieCardProps {
-  rec: Recommendation;
+  rec: Recommendation | SimilarMovieRecommendation;
+}
+
+function validYear(value: number | undefined) {
+  return Number.isInteger(value) && value! > 1880 && value! < 2200 ? value : undefined;
+}
+
+function Poster({ rec, showPoster, onError }: { rec: Recommendation | SimilarMovieRecommendation; showPoster: boolean; onError: () => void }) {
+  return showPoster ? (
+    <img
+      src={rec.poster_url}
+      alt={rec.title ? `${rec.title} poster` : "Movie poster"}
+      width="108"
+      height="162"
+      loading="lazy"
+      onError={onError}
+      className="movie-card-poster-image"
+    />
+  ) : (
+    <div className={`movie-card-poster-fallback bg-gradient-to-br ${gradientFor(rec.genre_primary)}`}>
+      <span>{(rec.title ?? rec.genre_primary ?? "Movie").slice(0, 1)}</span>
+    </div>
+  );
+}
+
+function IMDbRating({ rating }: { rating: number }) {
+  return <span className="imdb-rating" aria-label={`IMDb rating ${rating.toFixed(1)}`}><span aria-hidden="true">★</span> {rating.toFixed(1)}</span>;
 }
 
 export function MovieCard({ rec }: MovieCardProps) {
-  const badge = sourceBadge(rec.source);
   const [posterFailed, setPosterFailed] = useState(false);
   const showPoster = Boolean(rec.poster_url) && !posterFailed;
+  const isSimilarity = "similarity_score" in rec;
+  const title = rec.title || rec.movie_id;
+  const year = validYear(rec.release_year);
+  const rating = rec.imdb_rating != null && Number.isFinite(rec.imdb_rating) ? rec.imdb_rating : null;
+
+  if (isSimilarity) {
+    const similarityPercent = Math.max(0, Math.min(100, Math.round(rec.similarity_score * 100)));
+    const genres = Array.from(new Set([rec.genre_primary, rec.genre_secondary, ...rec.genres].filter(Boolean))).slice(0, 2);
+    const metadata = [year, genres.join(", ")].filter(Boolean).join(" · ");
+    const primaryReason = rec.match_reasons[0];
+
+    return (
+      <article aria-label={`${title}, ranked ${rec.rank}, ${similarityPercent}% match`} className="movie-result-card">
+        <div className="movie-card-poster">
+          <Poster rec={rec} showPoster={showPoster} onError={() => setPosterFailed(true)} />
+        </div>
+        <div className="movie-card-content">
+          <div className="movie-card-title-row">
+            <span className="movie-rank">#{rec.rank}</span>
+            <h4>{title}</h4>
+            <span className="similarity-score">{similarityPercent}% match</span>
+          </div>
+          {metadata && <p className="movie-metadata">{metadata}</p>}
+          <div className="movie-score-row">
+            {rating != null && <IMDbRating rating={rating} />}
+          </div>
+          <div className="similarity-line" role="progressbar" aria-label={`Match score for ${title}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={similarityPercent}>
+            <span style={{ width: `${similarityPercent}%` }} />
+          </div>
+          {primaryReason && <p className="match-reason">{primaryReason}</p>}
+          {rec.match_reasons.length > 1 && (
+            <details className="match-details">
+              <summary>More match details</summary>
+              <ul>{rec.match_reasons.slice(1).map((reason) => <li key={reason}>{reason}</li>)}</ul>
+            </details>
+          )}
+        </div>
+      </article>
+    );
+  }
+
+  const metadata = [
+    year,
+    rec.genre_primary,
+    rec.language && rec.language !== "English" ? rec.language : undefined,
+  ].filter(Boolean).join(" · ");
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900">
-      <div className="relative aspect-[2/3] w-full overflow-hidden">
-        {showPoster ? (
-          <img
-            src={rec.poster_url}
-            alt={rec.title ? `${rec.title} poster` : "Movie poster"}
-            loading="lazy"
-            onError={() => setPosterFailed(true)}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div
-            className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${gradientFor(rec.genre_primary)}`}
-          >
-            <span className="px-4 text-center text-sm font-semibold uppercase tracking-wide text-white/90">
-              {rec.genre_primary ?? "Unknown genre"}
-            </span>
-          </div>
-        )}
-
-        <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-semibold text-white">
-          #{rec.rank}
-        </span>
-        {rec.imdb_rating != null && (
-          <span className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-semibold text-white">
-            ★ {rec.imdb_rating.toFixed(1)}
-          </span>
-        )}
+    <article aria-label={`${title}, ranked ${rec.rank}`} className="movie-result-card">
+      <div className="movie-card-poster">
+        <Poster rec={rec} showPoster={showPoster} onError={() => setPosterFailed(true)} />
       </div>
-
-      <div className="flex flex-1 flex-col gap-1.5 p-4">
-        <h3 className="line-clamp-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-          {rec.title ?? rec.movie_id}
-        </h3>
-
-        <div className="flex flex-wrap gap-1 text-xs text-neutral-500 dark:text-neutral-400">
-          {rec.release_year && <span>{rec.release_year}</span>}
-          {rec.genre_primary && (
-            <>
-              <span>·</span>
-              <span>{rec.genre_primary}</span>
-            </>
-          )}
-          {rec.language && rec.language !== "English" && (
-            <>
-              <span>·</span>
-              <span>{rec.language}</span>
-            </>
-          )}
+      <div className="movie-card-content">
+        <div className="movie-card-title-row">
+          <span className="movie-rank">#{rec.rank}</span>
+          <h4>{title}</h4>
+          {Number.isFinite(rec.score) && <span className="recommendation-score">Recommended {rec.score.toFixed(2)}</span>}
         </div>
-
-        <div className="mt-auto flex items-center justify-between pt-2">
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
-            {badge.label}
-          </span>
-          <span className="text-xs text-neutral-400 dark:text-neutral-500">
-            score {rec.score.toFixed(2)}
-          </span>
-        </div>
+        {metadata && <p className="movie-metadata">{metadata}</p>}
+        <div className="movie-score-row">{rating != null && <IMDbRating rating={rating} />}</div>
+        {rec.overview && <p className="movie-overview">{rec.overview}</p>}
       </div>
-    </div>
+    </article>
   );
 }
