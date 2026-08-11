@@ -23,6 +23,10 @@ POPULAR_PATH = MODELS_DIR / "popular_movies.pkl"
 INTERACTIONS_PATH = MODELS_DIR / "user_item_interactions.parquet"
 USER_TOPN_PATH = MODELS_DIR / "user_topn.pkl"
 USER_TOPN_JSON_PATH = MODELS_DIR / "user_topn.json"
+CONTENT_SIM_DIR = MODELS_DIR / "content_similarity"
+CONTENT_FEATURES_PATH = CONTENT_SIM_DIR / "features.npz"
+CONTENT_MODEL_METADATA_PATH = CONTENT_SIM_DIR / "metadata.json"
+CONTENT_VOCABULARIES_PATH = CONTENT_SIM_DIR / "vocabularies.json"
 
 REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
