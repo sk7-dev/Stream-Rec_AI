@@ -1905,6 +1905,16 @@ summary:focus-visible,
     scrollbar-gutter: auto;
   }
   .mode-panel { padding: 20px; }
+
+  .workflow-heading-collapse,
+  .workflow-heading-collapse.is-collapsed {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transition: none;
+  }
+  .workflow-card--compact .workflow-heading {
+    margin-bottom: 22px;
+  }
 }
 
 @media (max-width: 639px) {
