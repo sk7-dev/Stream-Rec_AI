@@ -21,6 +21,14 @@ function ResultSkeleton({ label }: { label: string }) {
   );
 }
 
+function matchPercentScale(recommendations: RecommendationsResponse["recommendations"]) {
+  const scores = recommendations.map((rec) => rec.score);
+  const min = Math.min(...scores);
+  const max = Math.max(...scores);
+  const range = max - min;
+  return (score: number) => (range > 0 ? Math.round(65 + ((score - min) / range) * 34) : 92);
+}
+
 export function RecommendationsGrid({ data, loading, error, viewerName }: RecommendationsGridProps) {
   if (loading) return <ResultSkeleton label="Loading personalized recommendations" />;
 
@@ -53,6 +61,8 @@ export function RecommendationsGrid({ data, loading, error, viewerName }: Recomm
     );
   }
 
+  const matchPercentFor = matchPercentScale(data.recommendations);
+
   return (
     <section className="results-section" aria-labelledby="personalized-results-heading">
       <header className="results-header">
@@ -67,7 +77,9 @@ export function RecommendationsGrid({ data, loading, error, viewerName }: Recomm
         </span>
       </header>
       <div className="result-card-grid">
-        {data.recommendations.map((rec) => <MovieCard key={rec.movie_id} rec={rec} />)}
+        {data.recommendations.map((rec) => (
+          <MovieCard key={rec.movie_id} rec={rec} matchPercent={matchPercentFor(rec.score)} />
+        ))}
       </div>
     </section>
   );
