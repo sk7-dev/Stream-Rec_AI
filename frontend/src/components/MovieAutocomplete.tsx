@@ -7,6 +7,7 @@ interface MovieAutocompleteProps {
   selectedIds: ReadonlySet<string>;
   onSelect: (movie: MovieSearchItem) => void;
   disabled?: boolean;
+  compact?: boolean;
 }
 
 function PosterThumbnail({ movie }: { movie: MovieSearchItem }) {
@@ -22,7 +23,7 @@ function PosterThumbnail({ movie }: { movie: MovieSearchItem }) {
   );
 }
 
-export function MovieAutocomplete({ selectedIds, onSelect, disabled = false }: MovieAutocompleteProps) {
+export function MovieAutocomplete({ selectedIds, onSelect, disabled = false, compact = false }: MovieAutocompleteProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MovieSearchItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -112,8 +113,8 @@ export function MovieAutocomplete({ selectedIds, onSelect, disabled = false }: M
   const showPanel = open && query.trim().length >= 2;
 
   return (
-    <div ref={containerRef} className="search-control">
-      <label htmlFor={inputId}>Find movies</label>
+    <div ref={containerRef} className={`search-control ${compact ? "search-control--compact" : ""}`}>
+      {!compact && <label htmlFor={inputId}>Find movies</label>}
       <div className="search-field-wrap">
         <svg aria-hidden="true" viewBox="0 0 20 20" className="search-icon"><circle cx="8.5" cy="8.5" r="5" /><path d="m12.2 12.2 4 4" /></svg>
         <input
@@ -139,7 +140,7 @@ export function MovieAutocomplete({ selectedIds, onSelect, disabled = false }: M
       {disabled && <p className="input-helper">Remove a selected movie to search again.</p>}
 
       {showPanel && (
-        <div id={listboxId} role="listbox" className="search-results-panel">
+        <div id={listboxId} role="listbox" className={`search-results-panel ${compact ? "search-results-panel--compact" : ""}`}>
           {loading && <div className="autocomplete-skeleton" aria-label="Searching movies">{[0, 1, 2].map((item) => <span key={item}><i /><b /></span>)}</div>}
           {!loading && error && <p className="search-message search-error">{error}</p>}
           {!loading && !error && results.length === 0 && <p className="search-message">No matching movies found.</p>}
@@ -152,12 +153,12 @@ export function MovieAutocomplete({ selectedIds, onSelect, disabled = false }: M
               key={movie.movie_id}
               onMouseEnter={() => setActiveIndex(index)}
               onClick={() => choose(movie)}
-              className={`autocomplete-option ${index === activeIndex ? "is-active" : ""}`}
+              className={`autocomplete-option ${compact ? "autocomplete-option--compact" : ""} ${index === activeIndex ? "is-active" : ""}`}
             >
               <PosterThumbnail movie={movie} />
               <span className="autocomplete-copy">
                 <strong>{movie.title}</strong>
-                <span>{[movie.release_year, movie.genres.slice(0, 2).join(", ")].filter(Boolean).join(" · ")}</span>
+                <span>{compact ? (movie.release_year ?? "") : [movie.release_year, movie.genres.slice(0, 2).join(", ")].filter(Boolean).join(" · ")}</span>
               </span>
             </button>
           ))}
