@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { ApiError, getSimilarMovies } from "../api";
 import type { MovieSearchItem, SimilarMoviesResponse } from "../types";
+import { InfoTooltip } from "./InfoTooltip";
 import { MovieAutocomplete } from "./MovieAutocomplete";
 import { SimilarityResults } from "./SimilarityResults";
 
@@ -77,14 +78,11 @@ export function SimilarMovieSearch() {
         <div className="workflow-heading">
           <p className="section-kicker">
             Content discovery
-            <span className="info-tooltip" tabIndex={0} aria-label="Prototype catalog notice">
-              <span className="info-tooltip-glyph" aria-hidden="true">i</span>
-              <span className="info-tooltip-bubble" role="tooltip">
-                <strong>Prototype catalog.</strong> Similarity search currently operates on a curated,
-                limited selection of movies. A production deployment is designed to support a broader,
-                continuously refreshed catalog.
-              </span>
-            </span>
+            <InfoTooltip label="Prototype catalog notice">
+              <strong>Prototype catalog.</strong> Similarity search currently operates on a curated,
+              limited selection of movies. A production deployment is designed to support a broader,
+              continuously refreshed catalog.
+            </InfoTooltip>
           </p>
           <div className={`workflow-heading-collapse ${isCompactDiscovery ? "is-collapsed" : ""}`}>
             <div className="workflow-heading-collapse-inner">

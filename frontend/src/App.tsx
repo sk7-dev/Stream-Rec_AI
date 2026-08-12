@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { ApiError, getRecommendations } from "./api";
 import { HealthBadge } from "./components/HealthBadge";
 import { InfinitePosterBackground } from "./components/InfinitePosterBackground";
+import { InfoTooltip } from "./components/InfoTooltip";
 import { MovieModeSwitcher, type RecommendationMode } from "./components/MovieModeSwitcher";
 import { RecommendationsGrid } from "./components/RecommendationsGrid";
 import { SimilarMovieSearch } from "./components/SimilarMovieSearch";
@@ -110,15 +111,12 @@ function App() {
                 <div className="workflow-heading">
                   <p className="section-kicker">
                     For you
-                    <span className="info-tooltip" tabIndex={0} aria-label="For You demonstration notice">
-                      <span className="info-tooltip-glyph" aria-hidden="true">i</span>
-                      <span className="info-tooltip-bubble" role="tooltip">
-                        <strong>Demonstration environment.</strong> In production, this experience is
-                        designed to learn from live streaming activity and refresh recommendations
-                        continuously. This version uses representative sample data to demonstrate the
-                        end-to-end experience.
-                      </span>
-                    </span>
+                    <InfoTooltip label="For You demonstration notice">
+                      <strong>Demonstration environment.</strong> In production, this experience is
+                      designed to learn from live streaming activity and refresh recommendations
+                      continuously. This version uses representative sample data to demonstrate the
+                      end-to-end experience.
+                    </InfoTooltip>
                   </p>
                   <div className={`workflow-heading-collapse ${isCompactPersonalized ? "is-collapsed" : ""}`}>
                     <div className="workflow-heading-collapse-inner">

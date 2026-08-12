@@ -1890,6 +1890,7 @@ summary:focus-visible,
   .recommendation-workspace {
     display: block;
     margin-top: 12px;
+    overflow: visible;
   }
   .tabs-row {
     position: sticky;
@@ -1939,6 +1940,10 @@ summary:focus-visible,
   .poster-background-row { margin-block: 0.28rem; }
   .poster-background-card { width: clamp(5.5rem, 25vw, 7rem); }
   .poster-background-group { gap: 0.42rem; padding-right: 0.42rem; }
+
+  .info-tooltip-bubble {
+    width: min(260px, calc(100vw - 32px));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
