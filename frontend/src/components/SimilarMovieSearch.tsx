@@ -23,6 +23,7 @@ export function SimilarMovieSearch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const selectedIds = useMemo(() => new Set(selected.map((movie) => movie.movie_id)), [selected]);
+  const isCompactDiscovery = Boolean(data && data.recommendations.length > 0);
 
   function clearStaleResults() {
     setData(null);
@@ -72,7 +73,7 @@ export function SimilarMovieSearch() {
 
   return (
     <>
-      <form onSubmit={submit} className="workflow-card">
+      <form onSubmit={submit} className={`workflow-card ${isCompactDiscovery ? "workflow-card--compact" : ""}`}>
         <div className="workflow-heading">
           <p className="section-kicker">
             Content discovery
@@ -85,14 +86,23 @@ export function SimilarMovieSearch() {
               </span>
             </span>
           </p>
-          <h3>Start with a movie you love</h3>
-          <p>Choose up to three titles and we’ll blend their genres, themes, creators, language, and release characteristics.</p>
+          <div className={`workflow-heading-collapse ${isCompactDiscovery ? "is-collapsed" : ""}`}>
+            <div className="workflow-heading-collapse-inner">
+              <h3>Start with a movie you love</h3>
+              <p>Choose up to three titles and we’ll blend their genres, themes, creators, language, and release characteristics.</p>
+            </div>
+          </div>
         </div>
 
         <div className="search-submit-row">
-          <MovieAutocomplete selectedIds={selectedIds} onSelect={addMovie} disabled={selected.length >= 3} />
+          <MovieAutocomplete
+            selectedIds={selectedIds}
+            onSelect={addMovie}
+            disabled={selected.length >= 3}
+            compact={isCompactDiscovery}
+          />
           <div className="search-submit-button-wrap">
-            <span className="search-submit-spacer" aria-hidden="true">Find movies</span>
+            {!isCompactDiscovery && <span className="search-submit-spacer" aria-hidden="true">Find movies</span>}
             <button type="submit" disabled={selected.length === 0 || loading} className="primary-button search-submit-button">
               {loading && <span className="button-spinner" aria-hidden="true" />}
               <span>{loading ? "Finding matches…" : "Find similar movies"}</span>
@@ -102,23 +112,29 @@ export function SimilarMovieSearch() {
 
         {selected.length > 0 && (
           <div className="selected-movies-area" aria-label="Selected movies">
-            <div className="selected-movies-heading">
-              <p>Selected <span>· {selected.length} of 3</span></p>
-            </div>
-            <div className="selected-movie-list">
-              {selected.map((movie, index) => (
-                <div key={movie.movie_id} className="selected-movie-item">
-                  <SelectedMoviePoster movie={movie} />
-                  <span className="selection-number" aria-label={`Selection ${index + 1}`}>{index + 1}</span>
-                  <span className="selected-movie-copy">
-                    <strong>{movie.title}</strong>
-                    <span>{movie.release_year ?? "Year unavailable"}</span>
-                  </span>
-                  <button type="button" onClick={() => removeMovie(movie.movie_id)} aria-label={`Remove ${movie.title}`} className="remove-button">
-                    <svg aria-hidden="true" viewBox="0 0 20 20"><path d="m6 6 8 8m0-8-8 8" /></svg>
-                  </button>
-                </div>
-              ))}
+            {!isCompactDiscovery && (
+              <div className="selected-movies-heading">
+                <p>Selected <span>· {selected.length} of 3</span></p>
+              </div>
+            )}
+            <div className={`selected-movie-scroll-wrap ${isCompactDiscovery ? "selected-movie-scroll-wrap--compact" : ""}`}>
+              <div className={`selected-movie-list ${isCompactDiscovery ? "selected-movie-list--compact" : ""}`}>
+                {selected.map((movie, index) => (
+                  <div key={movie.movie_id} className={`selected-movie-item ${isCompactDiscovery ? "selected-movie-item--compact" : ""}`}>
+                    <SelectedMoviePoster movie={movie} />
+                    {!isCompactDiscovery && (
+                      <span className="selection-number" aria-label={`Selection ${index + 1}`}>{index + 1}</span>
+                    )}
+                    <span className="selected-movie-copy">
+                      <strong>{movie.title}</strong>
+                      <span>{movie.release_year ?? "Year unavailable"}</span>
+                    </span>
+                    <button type="button" onClick={() => removeMovie(movie.movie_id)} aria-label={`Remove ${movie.title}`} className="remove-button">
+                      <svg aria-hidden="true" viewBox="0 0 20 20"><path d="m6 6 8 8m0-8-8 8" /></svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
