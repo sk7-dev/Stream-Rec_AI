@@ -21,6 +21,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const scrollPositions = useRef<Record<RecommendationMode, number>>({ personalized: 0, similar: 0 });
+  const isCompactPersonalized = Boolean(data && data.recommendations.length > 0);
 
   function handleModeChange(nextMode: RecommendationMode) {
     if (nextMode === mode) return;
@@ -75,7 +76,7 @@ function App() {
               <path d="M8.1 5.1a1.1 1.1 0 0 1 1.67-.93l10 6.15a1.1 1.1 0 0 1 0 1.87l-10 6.15a1.1 1.1 0 0 1-1.67-.94V5.1Z" />
               <path d="M4 7v10" />
             </svg>
-            <span className="logo-stream">Stream</span><span className="logo-rec">-Rec</span>
+            <span className="logo-stream">Stream</span><span className="logo-rec">Rec</span>
           </div>
 
           <div className="brand-story-copy">
@@ -105,23 +106,27 @@ function App() {
 
           <div ref={scrollAreaRef} className="workspace-scroll-area" tabIndex={0}>
             <section id="personalized-panel" role="tabpanel" aria-labelledby="personalized-tab" hidden={mode !== "personalized"} className="mode-panel">
-              <div className="workflow-card">
+              <div className={`workflow-card ${isCompactPersonalized ? "workflow-card--compact" : ""}`}>
                 <div className="workflow-heading">
-                  <p className="section-kicker">For you</p>
-                  <h3>Recommendations made for you</h3>
-                  <p>Search for a viewer to build personalized suggestions from their history, preferences, and recent activity.</p>
-                </div>
-                <aside className="prototype-note prototype-note--personalized" aria-label="For You demonstration notice">
-                  <span className="prototype-note-icon" aria-hidden="true">
-                    <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.25" /><path d="M10 9.25v4.25M10 6.5h.01" /></svg>
-                  </span>
-                  <p>
-                    <strong>Demonstration environment.</strong> In production, this experience is
-                    designed to learn from live streaming activity and refresh recommendations
-                    continuously. This version uses representative sample data to demonstrate the
-                    end-to-end experience.
+                  <p className="section-kicker">
+                    For you
+                    <span className="info-tooltip" tabIndex={0} aria-label="For You demonstration notice">
+                      <span className="info-tooltip-glyph" aria-hidden="true">i</span>
+                      <span className="info-tooltip-bubble" role="tooltip">
+                        <strong>Demonstration environment.</strong> In production, this experience is
+                        designed to learn from live streaming activity and refresh recommendations
+                        continuously. This version uses representative sample data to demonstrate the
+                        end-to-end experience.
+                      </span>
+                    </span>
                   </p>
-                </aside>
+                  <div className={`workflow-heading-collapse ${isCompactPersonalized ? "is-collapsed" : ""}`}>
+                    <div className="workflow-heading-collapse-inner">
+                      <h3>Recommendations made for you</h3>
+                      <p>Search for a viewer to build personalized suggestions from their history, preferences, and recent activity.</p>
+                    </div>
+                  </div>
+                </div>
                 <UserSearch onSelect={handleSelectUser} />
                 {selectedUser && (
                   <div className="selected-user-card">
