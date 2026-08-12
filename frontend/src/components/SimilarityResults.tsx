@@ -43,7 +43,7 @@ export function SimilarityResults({ data, loading, error, selectedMovies }: Simi
     return (
       <div className="compact-empty-state">
         <span className="state-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="5.5"/><path d="m14 14 4.5 4.5M17 4v4M15 6h4" /></svg>
+          <svg viewBox="0 0 24 24"><path d="M3 9.5h18v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9Z" /><path d="m7 4.8 2 4.7M12 4.5l2 4.7M17 4.3l2 4.7" /><path d="m3 9.5 1.2-4.2a1 1 0 0 1 1-.75h13.6a1 1 0 0 1 1 .75L21 9.5" /></svg>
         </span>
         <span><strong>Your movie matches will appear here.</strong><small>Choose up to three movies to discover related titles.</small></span>
       </div>
