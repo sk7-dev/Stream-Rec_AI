@@ -246,7 +246,7 @@ summary {
   padding: 12px 14px;
   border: 1px solid rgb(255 255 255 / 0.14);
   border-radius: 12px;
-  background: rgb(28 31 39 / 0.92);
+  background: rgb(28 31 39 / 0.99);
   box-shadow: 0 16px 36px rgb(0 0 0 / 0.45);
   color: var(--text-secondary);
   font-size: 11.5px;
@@ -263,7 +263,7 @@ summary {
 
 @supports (backdrop-filter: blur(18px)) {
   .info-tooltip-bubble {
-    background: rgb(28 31 39 / 0.55);
+    background: rgb(28 31 39 / 0.96);
     backdrop-filter: blur(20px) saturate(160%);
   }
 }
