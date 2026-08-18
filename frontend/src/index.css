@@ -1983,6 +1983,10 @@ summary:focus-visible,
     overflow-y: visible;
     margin-top: 8px;
   }
+
+  html, body {
+    touch-action: pan-x pan-y;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
