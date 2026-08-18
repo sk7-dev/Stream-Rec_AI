@@ -72,12 +72,17 @@ function App() {
       <main className="single-screen-shell">
         <aside className="brand-story-panel" aria-labelledby="brand-story-heading">
           <div className="brand-panel-glow" aria-hidden="true" />
-          <div className="streamrec-logo" aria-label="Stream-Rec AI">
-            <svg aria-hidden="true" viewBox="0 0 24 24" className="logo-icon">
-              <path d="M8.1 5.1a1.1 1.1 0 0 1 1.67-.93l10 6.15a1.1 1.1 0 0 1 0 1.87l-10 6.15a1.1 1.1 0 0 1-1.67-.94V5.1Z" />
-              <path d="M4 7v10" />
-            </svg>
-            <span className="logo-stream">Stream</span><span className="logo-rec">Rec</span>
+          <div className="brand-header-row">
+            <div className="streamrec-logo" aria-label="Stream-Rec AI">
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="logo-icon">
+                <path d="M8.1 5.1a1.1 1.1 0 0 1 1.67-.93l10 6.15a1.1 1.1 0 0 1 0 1.87l-10 6.15a1.1 1.1 0 0 1-1.67-.94V5.1Z" />
+                <path d="M4 7v10" />
+              </svg>
+              <span className="logo-stream">Stream</span><span className="logo-rec">Rec</span>
+            </div>
+            <div className="mobile-health-slot">
+              <HealthBadge />
+            </div>
           </div>
 
           <div className="brand-story-copy">
