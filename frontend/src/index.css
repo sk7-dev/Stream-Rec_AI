@@ -159,6 +159,10 @@ summary {
   pointer-events: none;
 }
 
+.brand-header-row {
+  display: contents;
+}
+
 .streamrec-logo {
   position: relative;
   z-index: 1;
@@ -168,6 +172,10 @@ summary {
   font-size: clamp(22px, 1.8vw, 27px);
   font-weight: 750;
   letter-spacing: -0.045em;
+}
+
+.mobile-health-slot {
+  display: none;
 }
 
 .logo-icon {
@@ -1929,7 +1937,20 @@ summary:focus-visible,
   .capability-list { margin-top: 28px; }
   .capability-list span { padding: 7px 9px; font-size: 10px; }
   .status-pill { max-width: 118px; overflow: hidden; }
-  .tabs-row { padding: 10px 12px; }
+  .brand-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+  }
+  .mobile-health-slot { display: flex; }
+  .tabs-row {
+    padding: 10px 12px;
+    background: transparent;
+    backdrop-filter: none;
+  }
+  .tabs-row .status-pill { display: none; }
   .recommendation-tabs { width: 100%; }
   .recommendation-tab { flex: 1; padding-inline: 10px; font-size: 13px; }
   .mode-panel { padding: 14px 12px 80px; }
@@ -1953,6 +1974,14 @@ summary:focus-visible,
 
   .info-tooltip-bubble {
     width: min(260px, calc(100vw - 32px));
+  }
+
+  .search-control:not(.search-control--compact) .search-results-panel {
+    position: static;
+    width: 100%;
+    max-height: none;
+    overflow-y: visible;
+    margin-top: 8px;
   }
 }
 
